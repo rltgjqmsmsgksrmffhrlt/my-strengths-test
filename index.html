@@ -164,14 +164,12 @@ body {
     <div class="section-label">의견 남기기</div>
     <div class="feedback-box">
       <h3>진단 도구가 도움이 되셨나요?</h3>
-      <!-- ✨ FormSubmit: khan_0106@naver.com으로 피드백 전송 -->
-      <form action="https://formsubmit.co/khan_0106@naver.com" method="POST">
-        <input type="hidden" name="_subject" value="강점 진단 새로운 피드백">
-        <input type="hidden" name="_template" value="table">
+      <form id="feedback-form" onsubmit="submitFeedback(event)">
         <input type="hidden" id="hidden-top5" name="User_Top5" value="">
-        <textarea name="Message" class="feedback-textarea" placeholder="개선할 점이나 소감을 자유롭게 남겨주세요." required></textarea>
-        <button type="submit" class="btn-submit-feedback">피드백 전송하기</button>
+        <textarea id="feedback-msg" class="feedback-textarea" placeholder="개선할 점이나 소감을 자유롭게 남겨주세요." required></textarea>
+        <button type="submit" class="btn-submit-feedback" id="feedback-btn">피드백 전송하기</button>
       </form>
+      <div id="feedback-status" style="display:none;margin-top:14px;font-size:13px;line-height:1.7;"></div>
     </div>
 
     <div class="retry-area">
@@ -413,6 +411,62 @@ function loadSavedResult() {
 }
 
 function restartQuiz() { startQuiz(); }
+
+const FEEDBACK_KEY = 'strengths_feedback_last';
+const FEEDBACK_COOLDOWN = 24 * 60 * 60 * 1000; // 24시간
+
+function submitFeedback(e) {
+  e.preventDefault();
+  const statusEl = document.getElementById('feedback-status');
+  const btn = document.getElementById('feedback-btn');
+  const msg = document.getElementById('feedback-msg').value.trim();
+
+  const lastSent = parseInt(localStorage.getItem(FEEDBACK_KEY) || '0');
+  const remaining = FEEDBACK_COOLDOWN - (Date.now() - lastSent);
+  if (remaining > 0) {
+    const h = Math.ceil(remaining / 3600000);
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--brown)';
+    statusEl.textContent = `이미 피드백을 보내주셨습니다. ${h}시간 후에 다시 보내실 수 있습니다.`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '전송 중...';
+  statusEl.style.display = 'none';
+
+  const top5 = document.getElementById('hidden-top5').value;
+  const body = new FormData();
+  body.append('_subject', '강점 진단 새로운 피드백');
+  body.append('_template', 'table');
+  body.append('User_Top5', top5);
+  body.append('Message', msg);
+
+  fetch('https://formsubmit.co/ajax/khan_0106@naver.com', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+    body,
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success === 'true' || data.success === true) {
+        localStorage.setItem(FEEDBACK_KEY, String(Date.now()));
+        document.getElementById('feedback-form').style.display = 'none';
+        statusEl.style.display = 'block';
+        statusEl.style.color = 'var(--brown)';
+        statusEl.textContent = '소중한 의견 감사합니다! 피드백이 성공적으로 전달되었습니다.';
+      } else {
+        throw new Error('failed');
+      }
+    })
+    .catch(() => {
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#b94a3a';
+      statusEl.textContent = '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      btn.disabled = false;
+      btn.textContent = '피드백 전송하기';
+    });
+}
 </script>
 </body>
 </html>
