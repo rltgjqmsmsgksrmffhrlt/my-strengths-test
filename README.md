@@ -42,4 +42,4 @@ index.html 파일 내의 YOUR_CLARITY_PROJECT_ID를 본인의 프로젝트 ID로
 
 피드백 폼의 이메일 주소(your-email@example.com)를 본인의 이메일로 변경하세요.
 
-© 2026. 제작자: [본인 이름/닉네임]
+© 2026. 제작자: 김동찬 / khan_0106@naver.com
