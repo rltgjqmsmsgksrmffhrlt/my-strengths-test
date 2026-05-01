@@ -164,12 +164,8 @@ body {
     <div class="section-label">의견 남기기</div>
     <div class="feedback-box">
       <h3>진단 도구가 도움이 되셨나요?</h3>
-      <form id="feedback-form" onsubmit="submitFeedback(event)">
-        <input type="hidden" id="hidden-top5" name="User_Top5" value="">
-        <textarea id="feedback-msg" class="feedback-textarea" placeholder="개선할 점이나 소감을 자유롭게 남겨주세요." required></textarea>
-        <button type="submit" class="btn-submit-feedback" id="feedback-btn">피드백 전송하기</button>
-      </form>
-      <div id="feedback-status" style="display:none;margin-top:14px;font-size:13px;line-height:1.7;"></div>
+      <textarea id="feedback-msg" class="feedback-textarea" placeholder="개선할 점이나 소감을 자유롭게 남겨주세요."></textarea>
+      <button class="btn-submit-feedback" onclick="sendMailto()">피드백 전송하기</button>
     </div>
 
     <div class="retry-area">
@@ -178,10 +174,11 @@ body {
         ※ 본 진단은 갤럽의 34가지 테마를 기반으로 제작된 개인 학습용 약식 테스트입니다.<br>
         더 정확하고 공식적인 결과는 <strong>store.gallup.com</strong>을 이용하세요.
       </div>
-      <div style="margin-top:16px;font-size:10px;color:rgba(92,61,30,0.3);letter-spacing:1px;">v1.0.3</div>
     </div>
   </div>
 </div>
+
+<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(92,61,30,0.25);letter-spacing:1px;pointer-events:none;z-index:9999;">v1.0.4</div>
 
 <script>
 const themes = {
@@ -370,7 +367,7 @@ function showResult(scores) {
 
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const top5 = sorted.slice(0, 5);
-  document.getElementById('hidden-top5').value = top5.map(s => s[0]).join(', ');
+  window._top5Label = top5.map(s => s[0]).join(', ');
 
   const container = document.getElementById('top5-cards');
   container.innerHTML = '';
@@ -413,60 +410,13 @@ function loadSavedResult() {
 
 function restartQuiz() { startQuiz(); }
 
-const FEEDBACK_KEY = 'strengths_feedback_last';
-const FEEDBACK_COOLDOWN = 24 * 60 * 60 * 1000; // 24시간
-
-function submitFeedback(e) {
-  e.preventDefault();
-  const statusEl = document.getElementById('feedback-status');
-  const btn = document.getElementById('feedback-btn');
+function sendMailto() {
   const msg = document.getElementById('feedback-msg').value.trim();
-
-  const lastSent = parseInt(localStorage.getItem(FEEDBACK_KEY) || '0');
-  const remaining = FEEDBACK_COOLDOWN - (Date.now() - lastSent);
-  if (remaining > 0) {
-    const h = Math.ceil(remaining / 3600000);
-    statusEl.style.display = 'block';
-    statusEl.style.color = 'var(--brown)';
-    statusEl.textContent = `이미 피드백을 보내주셨습니다. ${h}시간 후에 다시 보내실 수 있습니다.`;
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '전송 중...';
-  statusEl.style.display = 'none';
-
-  const top5 = document.getElementById('hidden-top5').value;
-  const body = new FormData();
-  body.append('_subject', '강점 진단 새로운 피드백');
-  body.append('_template', 'table');
-  body.append('User_Top5', top5);
-  body.append('Message', msg);
-
-  fetch('https://formsubmit.co/ajax/khan_0106@naver.com', {
-    method: 'POST',
-    headers: { 'Accept': 'application/json' },
-    body,
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success === 'true' || data.success === true) {
-        localStorage.setItem(FEEDBACK_KEY, String(Date.now()));
-        document.getElementById('feedback-form').style.display = 'none';
-        statusEl.style.display = 'block';
-        statusEl.style.color = 'var(--brown)';
-        statusEl.textContent = '소중한 의견 감사합니다! 피드백이 성공적으로 전달되었습니다.';
-      } else {
-        throw new Error('failed');
-      }
-    })
-    .catch(() => {
-      statusEl.style.display = 'block';
-      statusEl.style.color = '#b94a3a';
-      statusEl.textContent = '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-      btn.disabled = false;
-      btn.textContent = '피드백 전송하기';
-    });
+  if (!msg) { alert('의견을 입력해 주세요.'); return; }
+  const top5 = window._top5Label || '';
+  const subject = encodeURIComponent('강점 진단 피드백');
+  const body = encodeURIComponent(`[나의 강점 TOP5: ${top5}]\n\n${msg}`);
+  window.location.href = `mailto:khan_0106@naver.com?subject=${subject}&body=${body}`;
 }
 </script>
 </body>
