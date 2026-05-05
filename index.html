@@ -113,6 +113,29 @@ body {
 .detail-label:first-child { margin-top: 0; }
 .detail-text { font-size: 13px; line-height: 1.8; color: var(--text); }
 .one-liner { font-family: 'Noto Serif KR', serif; font-size: 14px; color: var(--dark); font-style: italic; line-height: 1.7; }
+
+/* CHANGELOG */
+#cl-trigger { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:40px; font-size:12px; color:var(--muted); }
+.cl-new-tag { background:var(--gold); color:var(--dark); font-size:10px; font-weight:700; padding:2px 7px; border-radius:3px; letter-spacing:0.5px; }
+#cl-trigger button { background:none; border:none; cursor:pointer; font-size:12px; color:var(--muted); padding:0; font-family:'Noto Sans KR',sans-serif; }
+#cl-trigger button:hover { color:var(--gold); }
+#cl-panel { position:fixed; bottom:0; left:0; right:0; z-index:1000; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
+#cl-panel.open { transform:translateY(0); pointer-events:all; }
+#cl-inner { background:white; border-radius:16px 16px 0 0; padding:24px 24px 36px; max-height:72vh; box-shadow:0 -4px 32px rgba(0,0,0,0.13); position:relative; overflow:hidden; }
+#cl-close { position:absolute; top:14px; right:18px; background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted); line-height:1; }
+#cl-close:hover { color:var(--dark); }
+#cl-title { font-family:'Noto Serif KR',serif; font-size:13px; font-weight:600; color:var(--dark); margin-bottom:16px; letter-spacing:1px; }
+.cl-wrap { overflow:hidden; }
+.cl-slider { display:flex; transition:transform 0.3s ease; will-change:transform; cursor:grab; }
+.cl-slider.dragging { transition:none; cursor:grabbing; }
+.cl-card { flex:0 0 100%; padding:0 2px 4px; user-select:none; }
+.cl-ver { font-family:'Noto Serif KR',serif; font-size:22px; font-weight:700; color:var(--gold); }
+.cl-ver-sub { font-size:12px; color:var(--muted); margin:3px 0 14px; }
+.cl-item { display:flex; gap:8px; font-size:13px; line-height:1.75; color:var(--text); margin-bottom:4px; }
+.cl-item-bullet { color:var(--gold); font-size:10px; margin-top:5px; flex-shrink:0; }
+.cl-dots { display:flex; justify-content:center; gap:7px; margin-top:20px; }
+.cl-dot { width:6px; height:6px; border-radius:50%; background:rgba(201,150,42,0.2); cursor:pointer; transition:background 0.2s; border:none; padding:0; }
+.cl-dot.active { background:var(--gold); }
 </style>
 </head>
 <body>
@@ -131,6 +154,11 @@ body {
   <div id="prev-result-btn" style="display:none;margin-top:12px;">
     <button onclick="loadSavedResult()" style="background:transparent;border:1px solid rgba(201,150,42,0.4);color:var(--muted);padding:10px 28px;cursor:pointer;font-size:12px;">이전 결과 다시 보기</button>
     <div id="saved-date" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
+  </div>
+  <div id="cl-trigger">
+    <span class="cl-new-tag" id="cl-new-tag">🆕 NEW</span>
+    <span>v1.0.9 업데이트</span>
+    <button onclick="clOpen()">︿ 보기</button>
   </div>
 </div>
 
@@ -188,7 +216,53 @@ body {
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(92,61,30,0.25);letter-spacing:1px;pointer-events:none;z-index:9999;">v1.0.8</div>
+<div id="cl-panel">
+  <div id="cl-inner">
+    <button id="cl-close" onclick="clClose()">×</button>
+    <div id="cl-title">업데이트 내역</div>
+    <div class="cl-wrap">
+      <div class="cl-slider" id="cl-slider">
+
+        <div class="cl-card">
+          <div class="cl-ver">v1.0.9</div>
+          <div class="cl-ver-sub">인터랙티브 변경 로그</div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>업데이트 내역을 슬라이더 형태로 확인할 수 있는 변경 로그 추가</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>한 번 열어보면 🆕 NEW 뱃지 자동 제거</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>마우스 드래그 & 터치 스와이프 지원</span></div>
+        </div>
+
+        <div class="cl-card">
+          <div class="cl-ver">v1.0.8</div>
+          <div class="cl-ver-sub">진행 중 저장 & 이어서 하기</div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>문항 답변 시 자동 저장 (localStorage)</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>인트로에서 "이어서 하기 (37/68 완료 · 3일 전)" 버튼으로 재개</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>완료 또는 재시작 시 진행 데이터 자동 초기화</span></div>
+        </div>
+
+        <div class="cl-card">
+          <div class="cl-ver">v1.0.7</div>
+          <div class="cl-ver-sub">강점 상세 설명 추가</div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>34개 테마에 핵심 한 줄(oneLiner) 추가</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>그림자(과할 때 부작용) & 동료 시점 설명 추가</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>결과 카드에 "자세히 보기" 아코디언 UI</span></div>
+        </div>
+
+        <div class="cl-card">
+          <div class="cl-ver">v1.0.6 이하</div>
+          <div class="cl-ver-sub">초기 출시</div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>구글폼으로 피드백 방식 전환</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>하단 고정 버전 표시 & 안내 문구 추가</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>q-total 요소 누락 버그 수정</span></div>
+          <div class="cl-item"><span class="cl-item-bullet">✦</span><span>피드백 과다 전송 방지 (rate limit 처리)</span></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="cl-dots" id="cl-dots"></div>
+  </div>
+</div>
+
+<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(92,61,30,0.25);letter-spacing:1px;pointer-events:none;z-index:9999;">v1.0.9</div>
 
 <script>
 const themes = {
@@ -637,6 +711,68 @@ function loadSavedResult() {
 }
 
 function restartQuiz() { startQuiz(); }
+
+/* ── CHANGELOG ── */
+const CL_KEY = 'changelog_seen_v1.0.9';
+let clIdx = 0;
+const clTotal = 4;
+
+function clInitDots() {
+  const wrap = document.getElementById('cl-dots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < clTotal; i++) {
+    const b = document.createElement('button');
+    b.className = 'cl-dot' + (i === 0 ? ' active' : '');
+    b.onclick = () => clGo(i);
+    wrap.appendChild(b);
+  }
+}
+
+function clGo(n) {
+  clIdx = Math.max(0, Math.min(n, clTotal - 1));
+  document.getElementById('cl-slider').style.transform = `translateX(-${clIdx * 100}%)`;
+  document.querySelectorAll('.cl-dot').forEach((d, i) => d.classList.toggle('active', i === clIdx));
+}
+
+function clOpen() {
+  document.getElementById('cl-panel').classList.add('open');
+  if (!localStorage.getItem(CL_KEY)) {
+    localStorage.setItem(CL_KEY, '1');
+    const tag = document.getElementById('cl-new-tag');
+    if (tag) tag.style.display = 'none';
+  }
+}
+
+function clClose() {
+  document.getElementById('cl-panel').classList.remove('open');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  clInitDots();
+  if (localStorage.getItem(CL_KEY)) {
+    const tag = document.getElementById('cl-new-tag');
+    if (tag) tag.style.display = 'none';
+  }
+
+  const slider = document.getElementById('cl-slider');
+  let startX = 0, isDragging = false;
+
+  slider.addEventListener('mousedown', e => { startX = e.clientX; isDragging = true; slider.classList.add('dragging'); });
+  window.addEventListener('mousemove', e => { if (!isDragging) return; });
+  window.addEventListener('mouseup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    slider.classList.remove('dragging');
+    const dx = startX - e.clientX;
+    if (Math.abs(dx) > 40) clGo(clIdx + (dx > 0 ? 1 : -1));
+  });
+
+  slider.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  slider.addEventListener('touchend', e => {
+    const dx = startX - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 40) clGo(clIdx + (dx > 0 ? 1 : -1));
+  });
+}, { once: true });
 
 function toggleDetail(id) {
   const section = document.getElementById(id);
