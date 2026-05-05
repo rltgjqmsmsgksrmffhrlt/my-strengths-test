@@ -124,7 +124,11 @@ body {
   <h1 class="intro-title">나의 <em>강점</em>을 발견하다</h1>
   <p class="intro-sub">갤럽의 34가지 테마를 기반으로 한 약식 진단입니다.<br>잠재된 재능을 확인하고 성장의 발판으로 삼아보세요.</p>
   <button class="btn-start" onclick="startQuiz()">진단 시작하기</button>
-  <div id="prev-result-btn" style="display:none;margin-top:20px;">
+  <div id="resume-btn" style="display:none;margin-top:24px;">
+    <button onclick="resumeQuiz()" style="background:var(--dark);border:none;color:var(--gold-light);padding:13px 32px;cursor:pointer;font-size:14px;font-family:'Noto Serif KR',serif;letter-spacing:0.5px;">이어서 하기</button>
+    <div id="resume-info" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
+  </div>
+  <div id="prev-result-btn" style="display:none;margin-top:12px;">
     <button onclick="loadSavedResult()" style="background:transparent;border:1px solid rgba(201,150,42,0.4);color:var(--muted);padding:10px 28px;cursor:pointer;font-size:12px;">이전 결과 다시 보기</button>
     <div id="saved-date" style="font-size:11px;color:var(--muted);margin-top:8px;"></div>
   </div>
@@ -184,7 +188,7 @@ body {
   </div>
 </div>
 
-<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(92,61,30,0.25);letter-spacing:1px;pointer-events:none;z-index:9999;">v1.0.7</div>
+<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(92,61,30,0.25);letter-spacing:1px;pointer-events:none;z-index:9999;">v1.0.8</div>
 
 <script>
 const themes = {
@@ -466,9 +470,20 @@ const questions = [
 ];
 
 const STORAGE_KEY = 'strengths_v5_final_khan';
+const PROGRESS_KEY = 'strengths_progress';
 let currentQ = 0;
 let answers = [];
 let shuffledQuestions = [];
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor(diff / 60000);
+  if (d > 0) return `${d}일 전`;
+  if (h > 0) return `${h}시간 전`;
+  return `${m}분 전`;
+}
 
 function shuffle(arr) {
   const a = [...arr];
@@ -480,6 +495,13 @@ function shuffle(arr) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  const progress = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+  if (progress && progress.shuffledQuestions && progress.currentQ > 0) {
+    const done = progress.currentQ;
+    const total = progress.shuffledQuestions.length;
+    document.getElementById('resume-btn').style.display = 'block';
+    document.getElementById('resume-info').textContent = `${done} / ${total} 완료 · ${timeAgo(progress.savedAt)}`;
+  }
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
   if (saved) {
     document.getElementById('prev-result-btn').style.display = 'block';
@@ -489,11 +511,30 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function startQuiz() {
+  localStorage.removeItem(PROGRESS_KEY);
   currentQ = 0; answers = [];
   shuffledQuestions = shuffle(questions);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('quiz').classList.add('active');
   renderQuestion();
+}
+
+function resumeQuiz() {
+  const p = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+  if (!p) return;
+  shuffledQuestions = p.shuffledQuestions;
+  answers = p.answers;
+  currentQ = p.currentQ;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('quiz').classList.add('active');
+  renderQuestion();
+}
+
+function saveProgress() {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+    shuffledQuestions, answers, currentQ,
+    savedAt: new Date().toISOString()
+  }));
 }
 
 function renderQuestion() {
@@ -519,6 +560,7 @@ function selectScale(v) {
   setTimeout(() => {
     if (currentQ < shuffledQuestions.length - 1) {
       currentQ++;
+      saveProgress();
       renderQuestion();
     } else {
       finalize();
@@ -529,6 +571,7 @@ function selectScale(v) {
 function goBack() { if (currentQ > 0) { currentQ--; renderQuestion(); } }
 
 function finalize() {
+  localStorage.removeItem(PROGRESS_KEY);
   const finalScores = {};
   Object.keys(themes).forEach(t => finalScores[t] = 0);
   shuffledQuestions.forEach((q, i) => { if (answers[i]) finalScores[q.theme] += answers[i]; });
